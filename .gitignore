@@ -165,3 +165,6 @@ fig/
 *.pth
 *.out
 *.txt
+datasets/
+datasets copy/
+models/

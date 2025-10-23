@@ -83,6 +83,7 @@ class GeneralizedRCNN(nn.Module):
         self.num_classes = self.roi_heads.num_classes
         # collect features and export stats
         self.collect_features = collect_features
+        
         if self.collect_features:
             self.collect_iou_thr = collect_iou_thr
             self.gl_features = {}

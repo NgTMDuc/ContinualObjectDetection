@@ -135,6 +135,7 @@ def setup(args):
     return cfg
 
 def main(args):
+    # Get the configuration
     cfg = setup(args)
 
     if args.wandb:

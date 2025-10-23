@@ -607,9 +607,13 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
             )
 
         results = OrderedDict()
+
         for idx, dataset_name in enumerate(cfg.DATASETS.TEST):
+            # If collect the features -> Change the name of the dataset from test/val to train
             if cfg.TEST.COLLECT_FEATURES:
                 dataset_name = dataset_name.replace('test', 'train').replace('val', 'train')
+            
+            # Dataloader for the dataset to evaluator
             data_loader = cls.build_test_loader(cfg, dataset_name)
             # When evaluators are passed in as arguments,
             # implicitly assume that evaluators can be created before data_loader.
@@ -625,8 +629,11 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
                     )
                     results[dataset_name] = {}
                     continue
+            
+            # Running the inference and then save the result
             results_i, total_compute_time = inference_on_dataset(model, data_loader, evaluator, collect_features=cfg.TEST.COLLECT_FEATURES)
             results[dataset_name] = results_i
+            
             if comm.is_main_process():
                 assert isinstance(
                     results_i, dict
@@ -644,6 +651,7 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
                 feat_stats["fg"] = {k: (model.fg_features[k].mean(dim=0), torch.cov(model.fg_features[k].T))for k in model.fg_features}
                 feat_stats["bn_stats"] = [(m.mean, m.var) for m in list(model.backbone.bottom_up.modules()) if (isinstance(m, FrozenBatchNorm2d) or isinstance(m, LayerNorm)) and m.out_batch_norm]
                 feat_stats["kl_div"] = {}
+                
                 for k in model.gl_features:
                     num = model.gl_features[k].shape[0]
                     dist1 = torch.distributions.MultivariateNormal(model.gl_features[k].mean(dim=0), torch.cov(model.gl_features[k].T))
@@ -653,6 +661,7 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
                     print("in-domain kl divergence: {:.3f}".format(kl_div.item()))
                     logger.info("in-domain kl divergence: {:.3f}".format(kl_div.item()))
                 torch.save(feat_stats, os.path.join("models", "{}_feature_stats_new.pt".format(os.path.basename(cfg.MODEL.WEIGHTS).split(".")[0])))
+            
             mem_str = "torch.cuda.memory_allocated: %fGB\n" % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024)
             mem_str += "torch.cuda.max_memory_allocated: %fGB\n" % (torch.cuda.max_memory_allocated(0) / 1024 / 1024 / 1024)
             mem_str += "torch.cuda.memory_reserved: %fGB" % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024)
@@ -686,6 +695,7 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
             val_evaluator = cls.build_evaluator(cfg, dataset_name)
         else:
             val_evaluator = None
+            
         evaluator = cls.build_evaluator(cfg, dataset_name)
         d_idx = -1
         loss_ema99 = 0
