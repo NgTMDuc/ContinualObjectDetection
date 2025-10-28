@@ -713,8 +713,14 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
             test_domain = ['fog', 'rain', 'snow']
             # test_domain = ['rain']
         for d_idx, corrupt in enumerate(test_domain):
+            print("--------------------------------------------------------")
+            print("Running test time adaptation")
+            print("--------------------------------------------------------")
+            # Build model
             if d_idx == 0 or (d_idx >= 1 and not cfg.TEST.ADAPTATION.CONTINUAL):
                 model, optimizer, teacher_model = configure_model(cfg, DefaultTrainer, revert=True)
+            
+            # Build dataloader
             data_loader = cls.build_test_loader(cfg, "{}-{}".format(dataset_name, corrupt))
             if cfg.TEST.ADAPTATION.VALIDATION:
                 val_data_loader = cls.build_test_loader(cfg, "{}-{}".format(dataset_name, corrupt))
@@ -727,7 +733,21 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
             else:
                 val_data_loader = None
             if cfg.TEST.ONLINE_ADAPTATION:
-                results_i, loss_ema99, loss_ema95, loss_ema90, is_used, total_compute_time = inference_on_dataset_online_adaptation(cfg, model, data_loader, optimizer, evaluator, d_idx, wandb, teacher_model=teacher_model, val_data_loader=None, val_evaluator=None, loss_ema99=loss_ema99, loss_ema95=loss_ema95, loss_ema90=loss_ema90, is_used=is_used, domain_name=corrupt)
+                results_i, loss_ema99, loss_ema95, loss_ema90, is_used, total_compute_time = inference_on_dataset_online_adaptation(cfg, 
+                                                                                                                                    model, 
+                                                                                                                                    data_loader, 
+                                                                                                                                    optimizer, 
+                                                                                                                                    evaluator, 
+                                                                                                                                    d_idx, 
+                                                                                                                                    wandb, 
+                                                                                                                                    teacher_model=teacher_model, 
+                                                                                                                                    val_data_loader=None, 
+                                                                                                                                    val_evaluator=None, 
+                                                                                                                                    loss_ema99=loss_ema99, 
+                                                                                                                                    loss_ema95=loss_ema95, 
+                                                                                                                                    loss_ema90=loss_ema90, 
+                                                                                                                                    is_used=is_used, 
+                                                                                                                                    domain_name=corrupt)
                 #results_i, loss_ema99, loss_ema95, loss_ema90, is_used = inference_on_dataset_online_adaptation(cfg, model, data_loader, optimizer, evaluator, d_idx, wandb, teacher_model=teacher_model, loss_ema99=loss_ema99, loss_ema95=loss_ema95, loss_ema90=loss_ema90)
                 backward_num["{}-{}".format(dataset_name, corrupt)] = is_used - prev_used
                 prev_used = is_used

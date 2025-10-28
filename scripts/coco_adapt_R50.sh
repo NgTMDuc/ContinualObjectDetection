@@ -2,7 +2,8 @@
 
 # Backbone Type
 export bb="R50"
-
+# GPU config
+export CUDA_VISIBLE_DEVICES=1
 # Set config file
 export config_path="configs/TTA/COCO_${bb}.yaml"
 
@@ -39,7 +40,7 @@ export where="adapter"
 for continual in True
     do python tools/train_net.py \
   	--config-file ${config_path} \
-  	--eval-only --wandb \
+  	--eval-only  \
 	SOLVER.CLIP_GRADIENTS.CLIP_VALUE 1.0 \
   	TEST.ADAPTATION.WHERE ${where} \
   	TEST.ADAPTATION.CONTINUAL ${continual} \
@@ -52,7 +53,7 @@ export where="adapter"
 for continual in True
    do python tools/train_net.py \
  	--config-file ${config_path} \
- 	--eval-only --wandb \
+ 	--eval-only \
  	TEST.ADAPTATION.WHERE ${where} \
  	TEST.ADAPTATION.CONTINUAL ${continual} \
        TEST.ADAPTATION.SKIP_REDUNDANT "stat-period-ema" \

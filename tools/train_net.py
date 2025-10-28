@@ -149,6 +149,9 @@ def main(args):
     if args.eval_only:
         if cfg.TEST.CONTINUAL_DOMAIN:
             if 'coco' in cfg.DATASETS.TEST[0] or 'kitti' in cfg.DATASETS.TEST[0]:
+                print("----------------------------------------------------")
+                print("Running coco evaluation")
+                print("----------------------------------------------------")
                 res, backward_num = Trainer.test_continual_domain(cfg, wandb)
             elif 'shift' in cfg.DATASETS.TEST[0] and cfg.DATASETS.SHIFT.DIRNAME == 'discrete':
                 res, backward_num = Trainer.test_continual_domain_shift_discrete(cfg, wandb)
@@ -160,6 +163,7 @@ def main(args):
                 cfg.MODEL.WEIGHTS, resume=args.resume
             )
             res = Trainer.test(cfg, model)
+            
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg))
         if comm.is_main_process():

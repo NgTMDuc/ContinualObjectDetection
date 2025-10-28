@@ -226,7 +226,12 @@ def plot_pr_stat(cnt, values, file_name):
 
 
 def inference_on_dataset(
-    model, data_loader, evaluator: Union[DatasetEvaluator, List[DatasetEvaluator], None], collect_features=False, domain_name=None, visualize_dir=None
+    model, 
+    data_loader, 
+    evaluator: Union[DatasetEvaluator, List[DatasetEvaluator], None], 
+    collect_features=False, 
+    domain_name=None, 
+    visualize_dir=None
 ):
     """
     Run model on the data_loader and evaluate the metrics with evaluator.
@@ -387,7 +392,21 @@ def set_pseudo_labels(inputs, outputs, conf_th=0.5):
         new_inputs.append(new_inp)
     return new_inputs
 
-def inference_on_dataset_online_adaptation(cfg, model, data_loader, optimizer, evaluator, d_idx, wandb, teacher_model=None, val_data_loader=None, val_evaluator=None, loss_ema99=0, loss_ema95=0, loss_ema90=0, is_used=0, domain_name=None):
+def inference_on_dataset_online_adaptation(cfg, 
+                                           model, 
+                                           data_loader, 
+                                           optimizer, 
+                                           evaluator, 
+                                           d_idx, 
+                                           wandb, 
+                                           teacher_model=None, 
+                                           val_data_loader=None, 
+                                           val_evaluator=None, 
+                                           loss_ema99=0, 
+                                           loss_ema95=0, 
+                                           loss_ema90=0, 
+                                           is_used=0, 
+                                           domain_name=None):
     """
     Run model on the data_loader and evaluate the metrics with evaluator.
     Also benchmark the inference speed of `model.forward` accurately.
@@ -409,7 +428,7 @@ def inference_on_dataset_online_adaptation(cfg, model, data_loader, optimizer, e
     """
     num_devices = get_world_size()
     logger = logging.getLogger(__name__)
-    # logger.info("Start inference on {} images".format(len(data_loader)))
+    logger.info("Start adapt on {} images".format(len(data_loader)))
 
     total = len(data_loader)  # inference data loader must have a fixed length
     if evaluator is None:
@@ -427,7 +446,7 @@ def inference_on_dataset_online_adaptation(cfg, model, data_loader, optimizer, e
     prev_used = is_used
     f_sim = {}
     div_thr = 2* sum(model.s_div.values()) * cfg.TEST.ADAPTATION.SKIP_TAU if cfg.TEST.ADAPTATION.SKIP_REDUNDANT is not None else 2* sum(model.s_div.values())
-    # for weight regularization
+    # for weight regularization, make the model don't forget when update during TTA
     init_weights = []
     for p_idx, _p in enumerate(optimizer.param_groups):
         p = _p['params'][0]

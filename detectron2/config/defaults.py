@@ -689,6 +689,8 @@ _C.TEST.ADAPTATION.BN_DECAY_FACTOR = 0.94
 _C.TEST.ADAPTATION.BN_MOM_PRE = 0.01
 _C.TEST.ADAPTATION.BN_SOURCE_NUM = 128
 
+# Adaptation algorithm options #
+_C.TEST.ADAPTATION.ALGORITHM = "whw"
 # ---------------------------------------------------------------------------- #
 # EMA Teacher
 _C.TEST.EMA_TEACHER = False

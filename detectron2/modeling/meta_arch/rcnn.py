@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.config import configurable
+from detectron2.config import CfgNode, configurable
 from detectron2.data.detection_utils import convert_image_to_rgb
 from detectron2.layers import move_device_like, FrozenBatchNorm2d, LayerNorm
 from detectron2.structures import ImageList, Instances, pairwise_iou
@@ -53,6 +53,7 @@ class GeneralizedRCNN(nn.Module):
         ema_gamma: int = 128,
         freq_weight: bool = False,
         skip_tau: float = 1.0,
+        cfg: CfgNode = None
     ):
         """
         Args:
@@ -110,6 +111,7 @@ class GeneralizedRCNN(nn.Module):
         self.ema_gamma = ema_gamma
         self.freq_weight = freq_weight
         self.skip_tau = skip_tau
+        self.cfg = cfg
 
     @classmethod
     def from_config(cls, cfg):
@@ -133,6 +135,7 @@ class GeneralizedRCNN(nn.Module):
             "ema_gamma": cfg.TEST.ADAPTATION.EMA_GAMMA,
             "freq_weight": cfg.TEST.ADAPTATION.FREQ_WEIGHT,
             "skip_tau": cfg.TEST.ADAPTATION.SKIP_TAU,
+            "cfg": cfg
         }
 
     def initialize(self):
@@ -220,7 +223,10 @@ class GeneralizedRCNN(nn.Module):
                 "pred_boxes", "pred_classes", "scores", "pred_masks", "pred_keypoints"
         """
         if self.online_adapt:
-            return self.adapt(batched_inputs)
+            if self.whw_adapt:
+                if self.cfg.TEST.ADAPTATION.ALGORITHM == "whw":
+                    print("Running WHW adaptation")
+                    return self.whw_adapt(batched_inputs)
         elif self.collect_features:
             return self.collect_feats(batched_inputs)
         elif not self.training:
@@ -255,7 +261,7 @@ class GeneralizedRCNN(nn.Module):
         losses.update(proposal_losses)
         return losses
 
-    def adapt(
+    def whw_adapt(
         self,
         batched_inputs: List[Dict[str, torch.Tensor]],
         detected_instances: Optional[List[Instances]] = None,
@@ -575,6 +581,26 @@ class GeneralizedRCNN(nn.Module):
             processed_results.append({"instances": r, "proposals": p})
         return processed_results
 
+    def compute_scaling_factor_reg_loss(self) -> torch.Tensor:
+        """
+        Tính tổng L1(|gamma|) của các lớp chuẩn hoá trong backbone.
+
+        Returns:
+            torch.Tensor: Tổng L1 norm của các hệ số scale (gamma).
+                        Trả về tensor(0.0) đúng device nếu không tìm thấy.
+        """
+        total = None
+        for _, m in self.backbone.named_modules():
+            is_norm = isinstance(m, (FrozenBatchNorm2d, nn.BatchNorm2d, LayerNorm))
+            w = getattr(m, "weight", None)
+            if not (is_norm and w is not None and getattr(w, "requires_grad", False)):
+                continue
+            l1 = w.abs().sum()
+            total = l1 if total is None else total + l1
+
+        if total is None:
+            return torch.tensor(0.0, device=self.device)
+        return total
 
 @META_ARCH_REGISTRY.register()
 class ProposalNetwork(nn.Module):

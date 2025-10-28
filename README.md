@@ -15,6 +15,7 @@ Conda activate cta_od
 conda install pytorch==1.11.0 torchvision==0.12.0 cudatoolkit=11.8 -c pytorch
 
 cd ContinualTTA_ObjectDetection
+pip install --no-build-isolation --only-binary=:all: --no-cache-dir mmcv-full==1.6.0 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.12/index.html
 pip install -r requirements.txt
 
 ## Make sure you have GCC and G++ version <=8.0
